@@ -2,7 +2,10 @@ const fs = require("fs");
 const path = require("path");
 
 const skillsDir = path.join(__dirname, "../skills");
-const outputDir = path.join(__dirname, "../public/.well-known/skills");
+const outputDirs = [
+  path.join(__dirname, "../public/.well-known/skills"),
+  path.join(__dirname, "../public/.well-known/agent-skills"),
+];
 
 const skills = [];
 
@@ -49,10 +52,12 @@ for (const skillName of fs.readdirSync(skillsDir)) {
   skills.push({ name, description });
 }
 
-fs.mkdirSync(outputDir, { recursive: true });
-fs.writeFileSync(
-  path.join(outputDir, "index.json"),
-  JSON.stringify({ skills }, null, 2)
-);
+for (const outputDir of outputDirs) {
+  fs.mkdirSync(outputDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(outputDir, "index.json"),
+    JSON.stringify({ skills }, null, 2)
+  );
+}
 
 console.log(`Generados ${skills.length} skills:`, skills.map(s => s.name));
