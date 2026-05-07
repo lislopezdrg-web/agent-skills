@@ -6,6 +6,22 @@ const outputDir = path.join(__dirname, "../public/.well-known/skills");
 
 const skills = [];
 
+function parseYamlValue(value, allLines, startIndex) {
+  value = value.trim();
+  if (value === ">-" || value === ">" || value === "|" || value === "|-") {
+    const lines = [];
+    let i = startIndex + 1;
+    while (i < allLines.length) {
+      const line = allLines[i];
+      if (line.match(/^\S/) || line === "---") break;
+      lines.push(line.trim());
+      i++;
+    }
+    return lines.filter(Boolean).join(" ");
+  }
+  return value.replace(/^["']|["']$/g, "");
+}
+
 for (const skillName of fs.readdirSync(skillsDir)) {
   const skillPath = path.join(skillsDir, skillName);
   const skillMdPath = path.join(skillPath, "SKILL.md");
@@ -16,14 +32,20 @@ for (const skillName of fs.readdirSync(skillsDir)) {
   const match = content.match(/^---\n([\s\S]*?)\n---/);
   if (!match) continue;
 
-  const name = match[1].match(/^name:\s*(.+)$/m)?.[1]?.trim();
-  const description = match[1].match(/^description:\s*([\s\S]*?)(?=\n\w|$)/m)?.[1]
-    ?.replace(/>\-\n\s+/g, "")
-    ?.replace(/\n\s+/g, " ")
-    ?.trim();
+  const frontmatterLines = match[1].split("\n");
+  let name = null;
+  let description = null;
+
+  for (let i = 0; i < frontmatterLines.length; i++) {
+    const line = frontmatterLines[i];
+    const nameMatch = line.match(/^name:\s*(.+)$/);
+    const descMatch = line.match(/^description:\s*(.*)$/);
+
+    if (nameMatch) name = nameMatch[1].trim();
+    if (descMatch) description = parseYamlValue(descMatch[1], frontmatterLines, i);
+  }
 
   if (!name || !description) continue;
-
   skills.push({ name, description });
 }
 
